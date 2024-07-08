@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catalogue
+  labels:
+    service: catalogue
+spec:
+  replicas: {{ .Values.catalogue.replicas }}
+  selector:
+    matchLabels:
+      service: catalogue
+  template:
+    metadata:
+      labels:
+        service: catalogue
+    spec:
+      {{ if .Values.psp.enabled }}
+      serviceAccountName: robot-shop
+      {{ end }}
+      containers:
+      - name: catalogue
+        image: {{ .Values.catalogue.image.repo }}:{{ .Values.catalogue.image.version }}
+        imagePullPolicy: {{ .Values.catalogue.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.catalogue.port }}
+        resources:
+          limits:
+            cpu: {{ .Values.catalogue.resources.limits.cpu }}
+            memory: {{ .Values.catalogue.resources.limits.memory }}
+          requests:
+            cpu: {{ .Values.catalogue.resources.requests.cpu }}
+            memory: {{ .Values.catalogue.resources.requests.memory }}
+      imagePullSecrets:
+      - name: myecrsec
+      restartPolicy: Always
+      {{- with .Values.catalogue.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.catalogue.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.catalogue.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
